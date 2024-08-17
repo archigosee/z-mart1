@@ -1,0 +1,39 @@
+.bottom-nav {
+  display: flex;
+  justify-content: space-around;
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  background: #fff;
+  box-shadow: 0 -1px 6px rgba(0, 0, 0, 0.1);
+  transition: opacity 0.5s;
+}
+
+.bottom-nav .nav-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.3s, background 0.3s, border 0.3s, color 0.3s;
+}
+
+.bottom-nav .nav-link.active {
+  transform: scale(1.15) translateY(-0.5em);
+  background: linear-gradient(135deg, #23f, #6589ff);
+  border: 5px solid #dcdcdc;
+  color: white;
+  border-radius: 50%;
+  overflow: hidden;
+  width: 60px; /* Reduced size for the active circle */
+  height: 60px; /* Reduced size for the active circle */
+}
+
+.bottom-nav .nav-link.active img {
+  width: 30px; /* Smaller icon size */
+  height: 30px; /* Smaller icon size */
+}
+
+@media (max-width: 640px) {
+  .bottom-nav {
+    justify-content: space-around;
+  }
+}

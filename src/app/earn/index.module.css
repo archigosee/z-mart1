@@ -1,0 +1,89 @@
+/* styles/index.module.css */
+.container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    width: 100%;
+    padding: 20px;
+  }
+  
+  .container__header {
+    font-size: 2rem;
+    margin-bottom: 30px;
+  }
+  
+  .container__subheader {
+    font-size: 1.5rem;
+    margin-bottom: 10rem;
+  }
+  
+  .earnOptions {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding-top: 30px;
+    width: 100%;
+  }
+  
+  .option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: #333;
+    padding: 30px 50px;
+    border-radius: 15px; /* Increased border-radius for a rounder look */
+    color: white;
+    width: 100%;
+}
+
+  
+  .image {
+    width: 50px;
+    height: 40px;
+    object-fit: contain;
+  }
+  
+  .text {
+    flex: 1;
+    margin-left: 15px;
+  }
+  
+  .text p {
+    margin: 0;
+    font-size: 0.9rem; /* Smaller text size */
+  }
+  
+  .text span {
+    font-size: 0.8rem; /* Smaller point size */
+    color: gold;
+    margin-top: 5px; /* Space between text and points */
+    display: block;
+  }
+  
+  .button {
+    margin-left: 10px;
+  }
+  
+  .joinButton {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+  }
+  
+  .joinButton:hover {
+    background-color: #0056b3;
+  }
+  
+  .checkButton {
+    background-color: #28a745;
+  }
+  
+  .checkButton:hover {
+    background-color: #218838;
+  }
+  
