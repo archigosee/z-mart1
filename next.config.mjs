@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     env:{
-        API_URL:"http://localhost:3000",
+        API_URL:"https://z-mart1.vercel.app/",
         DB_URI:"mongodb://localhost:27017/mart"
     },
     images:{
