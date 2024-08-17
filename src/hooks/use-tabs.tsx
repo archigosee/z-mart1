@@ -1,4 +1,4 @@
-/* eslint-disable prettier/prettier */
+
 import { ReactNode, useState } from 'react';
 
 export type Tab = { label: string; id: string; children: ReactNode };
