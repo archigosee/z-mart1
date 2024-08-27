@@ -8,6 +8,7 @@ const Profile = () => {
   const [userData, setUserData] = useState(null);
   const [points, setPoints] = useState(0);
   const [commission, setCommission] = useState(0); // State for commission
+  const [phoneNumber, setPhoneNumber] = useState(''); // State for phone number
 
   useEffect(() => {
     // Fetch the user data from Telegram WebApp SDK
@@ -18,36 +19,23 @@ const Profile = () => {
 
   useEffect(() => {
     if (userData) {
-      // Fetch the user's total points
-      const fetchPoints = async () => {
+      // Fetch the user's profile information including points, commission, and phone number
+      const fetchUserProfile = async () => {
         try {
-          const response = await fetch(`/api/points?userId=${userData.id}`);
+          const response = await fetch(`/api/user/${userData.id}`);
           if (!response.ok) {
-            throw new Error('Failed to fetch points');
+            throw new Error('Failed to fetch user profile');
           }
           const data = await response.json();
-          setPoints(data.points || 0);
+          setPoints(data.data.points || 0);
+          setCommission(data.data.commission || 0);
+          setPhoneNumber(data.data.phoneNumber || ''); // Set the fetched phone number
         } catch (error) {
-          console.error('Error fetching points:', error);
+          console.error('Error fetching user profile:', error);
         }
       };
 
-      // Fetch the user's total commission
-      const fetchCommission = async () => {
-        try {
-          const response = await fetch(`/api/commission?userId=${userData.id}`);
-          if (!response.ok) {
-            throw new Error('Failed to fetch commission');
-          }
-          const data = await response.json();
-          setCommission(data.commission || 0);
-        } catch (error) {
-          console.error('Error fetching commission:', error);
-        }
-      };
-
-      fetchPoints();
-      fetchCommission(); // Fetch the commission
+      fetchUserProfile();
     }
   }, [userData]);
 
@@ -78,6 +66,7 @@ const Profile = () => {
             <li><strong>First Name:</strong> {userData.first_name}</li>
             {userData.last_name && <li><strong>Last Name:</strong> {userData.last_name}</li>}
             <li><strong>Username:</strong> @{userData.username}</li>
+            <li><strong>Phone Number:</strong> {phoneNumber}</li> {/* Display phone number */}
             <li><strong>Total Points:</strong> {points}</li> {/* Display total points */}
             <li><strong>Total Commission:</strong> ${commission.toFixed(2)}</li> {/* Display total commission */}
           </ul>

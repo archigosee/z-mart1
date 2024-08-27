@@ -1,41 +1,34 @@
-import dbConnect from '../../../backend/config/dbConnect';
-
-const BOT_TOKEN = '7350305630:AAEsjUdDvgDlsXhToZel8NoI3SCxpv5lIrE'; // Replace with your bot's token
-const CHANNEL_ID = '1339725466'; 
-
 export default async function handler(req, res) {
-  if (req.method === 'POST') {
-    try {
-      await dbConnect();
-      const { userId } = req.body;
+  const { userId } = req.query;
 
-      // Check if user is a member of the Telegram channel
-      const checkMembership = await fetch(
-        `https://api.telegram.org/bot${BOT_TOKEN}/getChatMember?chat_id=${CHANNEL_ID}&user_id=${userId}`
-      );
-      const membershipData = await checkMembership.json();
+  if (!userId) {
+    return res.status(400).json({ message: 'User ID is required' });
+  }
 
-      if (!membershipData.ok) {
-        console.error('Failed to check membership status:', membershipData.description);
-        return res.status(500).json({
-          message: 'Failed to check membership status. Please try again later.',
-        });
-      }
+  const TELEGRAM_BOT_TOKEN = '7350305630:AAEsjUdDvgDlsXhToZel8NoI3SCxpv5lIrE';
+  const TELEGRAM_CHANNEL_ID = '@dz_ech'; // Example: '@your_channel_id'
 
-      const isMember =
-        membershipData.result.status === 'member' ||
-        membershipData.result.status === 'administrator' ||
-        membershipData.result.status === 'creator';
+  try {
+    const response = await fetch(
+      `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getChatMember?chat_id=${TELEGRAM_CHANNEL_ID}&user_id=${userId}`
+    );
+    const data = await response.json();
 
-      // Log membership status to the terminal
-      console.log(`User ID ${userId} is ${isMember ? 'a member' : 'not a member'}`);
+    // Log the API response for debugging
+    console.log('Telegram API Response:', data);
 
-      res.status(200).json({ isMember });
-    } catch (error) {
-      console.error('Error checking membership status:', error.message);
-      res.status(500).json({ message: 'Internal Server Error' });
+    if (!data.ok) {
+      return res.status(500).json({ message: 'Failed to check membership', error: data.description });
     }
-  } else {
-    res.status(405).json({ message: 'Method Not Allowed' });
+
+    const isMember =
+      data.result.status === 'member' ||
+      data.result.status === 'administrator' ||
+      data.result.status === 'creator';
+
+    res.json({ isMember });
+  } catch (error) {
+    console.error('Error checking Telegram membership:', error);
+    res.status(500).json({ message: 'Internal server error', error: error.message });
   }
 }

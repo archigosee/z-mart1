@@ -11,6 +11,7 @@ const userSchema = new mongoose.Schema({
   lastName: String,
   username: String,
   languageCode: String,
+  phoneNumber:String,
   points: {
     type: Number,
     default: 0,

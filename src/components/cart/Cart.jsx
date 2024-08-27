@@ -11,6 +11,9 @@ const Cart = () => {
   const { cart, addItemToCart, deleteItemFromCart, clearCart } = useContext(CartContext);
   const router = useRouter();
   const [userData, setUserData] = useState(null);
+  const [selectedOption, setSelectedOption] = useState("self");
+  const [address, setAddress] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
 
   useEffect(() => {
     // Fetch the user data from Telegram WebApp SDK
@@ -34,7 +37,7 @@ const Cart = () => {
   };
 
   const amountWithoutcom = cart?.cartItems?.reduce(
-    (acc, item) => acc + item.quantity * item.price,
+    (acc, item) => acc + (Number(item.quantity) * Number(item.price)),
     0
   );
 
@@ -50,33 +53,63 @@ const Cart = () => {
         price: item.price,
         product: item.product,
       }));
-  
+
       const userId = userData?.id;
-  
+
       if (!userId) {
         console.error('User ID is not available. Cannot place order.');
         return;
       }
-  
+
       if (orderItems.length === 0 || totalAmount <= 0) {
         console.error('Invalid order details. Cannot place order.');
         return;
       }
-  
+
+      let orderDetails = {
+        userId,
+        orderItems,
+        totalAmount,
+        commissionamount: Number(commissionamount),
+      };
+
+      // Add address and phone number if "Other" is selected
+      if (selectedOption === "other") {
+        if (!address || !phoneNumber) {
+          console.error('Please provide address and phone number.');
+          return;
+        }
+        orderDetails = {
+          ...orderDetails,
+          address,
+          phoneNumber,
+        };
+      }
+
+      // Place the order
       const response = await fetch('/api/orders', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          userId,
-          orderItems,
-          totalAmount,
-          commissionamount: Number(commissionamount),
-        }),
+        body: JSON.stringify(orderDetails),
       });
-  
+
       if (response.ok) {
+        // Award 2000 points if the total amount is more than $200
+        if (totalAmount > 200) {
+          await fetch('/api/points', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              userId,
+              points: 2000,
+            }),
+          });
+        }
+
         clearCart();
         router.push('/order-confirmed');
       } else {
@@ -88,9 +121,6 @@ const Cart = () => {
       console.error('Error creating order:', error);
     }
   };
-  
-  
-  
 
   return (
     <>
@@ -211,6 +241,60 @@ const Cart = () => {
                       <span>${totalAmount}</span>
                     </li>
                   </ul>
+
+                  {/* Radio Buttons for "Self" or "Other" */}
+                  <div className="mb-5">
+                    <label className="mr-4">
+                      <input
+                        type="radio"
+                        value="self"
+                        checked={selectedOption === "self"}
+                        onChange={() => setSelectedOption("self")}
+                        className="mr-2"
+                      />
+                      Self
+                    </label>
+                    <label>
+                      <input
+                        type="radio"
+                        value="other"
+                        checked={selectedOption === "other"}
+                        onChange={() => setSelectedOption("other")}
+                        className="mr-2"
+                      />
+                      Other
+                    </label>
+                  </div>
+
+                  {/* Display Address and Phone Number Form if "Other" is selected */}
+                  {selectedOption === "other" && (
+                    <div className="mb-5">
+                      <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-700">
+                          Address
+                        </label>
+                        <input
+                          type="text"
+                          className="mt-1 p-2 block w-full border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                          value={address}
+                          onChange={(e) => setAddress(e.target.value)}
+                          placeholder="Enter the address"
+                        />
+                      </div>
+                      <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-700">
+                          Phone Number
+                        </label>
+                        <input
+                          type="text"
+                          className="mt-1 p-2 block w-full border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                          value={phoneNumber}
+                          onChange={(e) => setPhoneNumber(e.target.value)}
+                          placeholder="Enter the phone number"
+                        />
+                      </div>
+                    </div>
+                  )}
 
                   <button
                     className="px-4 py-3 mb-2 inline-block text-lg w-full text-center font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 cursor-pointer"

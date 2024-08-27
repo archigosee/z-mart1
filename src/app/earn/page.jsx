@@ -10,19 +10,20 @@ const options = [
     text: "Join ZobelTech",
     points: 1000,
     icon: "/assets/icons/youtube.png",
-    link: "https://www.youtube.com/join",
+    link: "https://www.youtube.com/@JuniorScienceSquad?sub_confirmation=1",
   },
   {
     text: "Watch Zobel's Video",
     points: 1000,
     icon: "/assets/icons/youtube.png",
-    link: "https://www.youtube.com/watch",
+    link: "https://www.youtube.com/shorts/DDGI6Hzn7P4?sub_confirmation=1",
   },
   {
     text: "Join our TG channel",
     points: 5000,
     icon: "/assets/icons/telegram.png",
-    link: "https://t.me/+r2fXaKYAYz8wYWU0",
+    link: "https://t.me/dz_ech",
+    requiresCheck: true, // Indicates this option needs Telegram membership check
   },
   {
     text: "Follow our X account",
@@ -35,6 +36,8 @@ const options = [
 const EarnPage = () => {
   const [userId, setUserId] = useState(null);
   const [completedActions, setCompletedActions] = useState({});
+  const [tgMembership, setTgMembership] = useState(false);
+  const [isMemberChecked, setIsMemberChecked] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && WebApp.initDataUnsafe.user) {
@@ -44,6 +47,37 @@ const EarnPage = () => {
 
   useEffect(() => {
     if (userId) {
+      // Check Telegram membership first
+      const checkTelegramMembership = async () => {
+        try {
+          const response = await fetch(`/api/checkMembership?userId=${userId}`);
+          const data = await response.json();
+
+          const isMember =
+            data.result.status === 'member' ||
+            data.result.status === 'administrator' ||
+            data.result.status === 'creator';
+
+          if (isMember) {
+            // If the user is a member, treat the action as completed even if it wasn't saved
+            setCompletedActions((prev) => ({ ...prev, "Join our TG channel": true }));
+          }
+
+          setTgMembership(isMember);
+          setIsMemberChecked(true); // Mark membership check as complete
+        } catch (error) {
+          console.error('Error checking Telegram membership:', error);
+          setIsMemberChecked(true); // Ensure membership check is marked complete even on error
+        }
+      };
+
+      checkTelegramMembership();
+    }
+  }, [userId]);
+
+  useEffect(() => {
+    if (isMemberChecked) {
+      // Fetch saved user actions only after checking Telegram membership
       const fetchCompletedActions = async () => {
         try {
           const response = await fetch(`/api/user/actions?userId=${userId}`);
@@ -52,7 +86,15 @@ const EarnPage = () => {
           if (response.ok) {
             const actionStatus = {};
             options.forEach((option) => {
-              actionStatus[option.text] = data.completedActions.includes(option.text);
+              if (option.text === "Join our TG channel") {
+                // If the user is confirmed as a member, the button is already set to 'Check'
+                // We don't need to override it based on saved actions
+                if (!tgMembership) {
+                  actionStatus[option.text] = data.completedActions.includes(option.text);
+                }
+              } else {
+                actionStatus[option.text] = data.completedActions.includes(option.text);
+              }
             });
             setCompletedActions(actionStatus);
           } else {
@@ -65,17 +107,13 @@ const EarnPage = () => {
 
       fetchCompletedActions();
     }
-  }, [userId]);
+  }, [isMemberChecked, tgMembership, userId]);
 
-  const handleJoinClick = async (event, link, text, points) => {
+  const handleJoinClick = async (event, option) => {
     event.preventDefault();
 
-    if (completedActions[text]) {
-      window.open(link, '_blank');
-      return;
-    }
-
-    window.open(link, '_blank');
+    // Open the link in a new tab
+    window.open(option.link, '_blank');
 
     if (userId) {
       try {
@@ -84,11 +122,12 @@ const EarnPage = () => {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ userId, action: text, points }),
+          body: JSON.stringify({ userId, action: option.text, points: option.points }),
         });
 
         if (response.ok) {
-          setCompletedActions((prev) => ({ ...prev, [text]: true }));
+          // Save the action in state to mark it as completed
+          setCompletedActions((prev) => ({ ...prev, [option.text]: true }));
         } else {
           const data = await response.json();
           console.error('Failed to save action:', data.message);
@@ -112,10 +151,14 @@ const EarnPage = () => {
             <div className={styles.button}>
               <button
                 id={option.text}
-                className={`${styles.joinButton} ${completedActions[option.text] ? styles.checkButton : ''}`}
-                onClick={(e) => handleJoinClick(e, option.link, option.text, option.points)}
+                className={`${styles.joinButton} ${
+                  (option.requiresCheck && tgMembership) || completedActions[option.text] ? styles.checkButton : ''
+                }`}
+                onClick={(e) => handleJoinClick(e, option)}
               >
-                {completedActions[option.text] ? 'Check' : 'Join'}
+                {(option.requiresCheck && tgMembership) || completedActions[option.text]
+                  ? 'Check'
+                  : 'Join'}
               </button>
             </div>
           </div>
