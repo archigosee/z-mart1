@@ -5,6 +5,31 @@ import Image from 'next/image';
 import WebApp from '@twa-dev/sdk';
 import styles from './index.module.css';
 
+// Modal Component
+const Modal = ({ option, isOpen, onClose, handleJoinClick, completedActions, tgMembership }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className={styles.modalOverlay}>
+      <div className={styles.modalContent}>
+        <button className={styles.closeButton} onClick={onClose}>&times;</button>
+        <h2>{option.text}</h2>
+        <p>Earn {option.points} points by completing this action.</p>
+        <Image className={styles.image} src={option.icon} alt={option.text} width={60} height={60} />
+        <button
+          id={option.text}
+          className={`${styles.joinButton} ${
+            (option.requiresCheck && tgMembership) || completedActions[option.text] ? styles.checkButton : ''
+          }`}
+          onClick={(e) => handleJoinClick(e, option)}
+        >
+          {(option.requiresCheck && tgMembership) || completedActions[option.text] ? 'Check' : 'Join'}
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const options = [
   {
     text: "Join ZobelTech",
@@ -38,6 +63,8 @@ const EarnPage = () => {
   const [completedActions, setCompletedActions] = useState({});
   const [tgMembership, setTgMembership] = useState(false);
   const [isMemberChecked, setIsMemberChecked] = useState(false);
+  const [selectedOption, setSelectedOption] = useState(null); // Track selected card
+  const [isModalOpen, setIsModalOpen] = useState(false); // Track modal state
 
   useEffect(() => {
     if (typeof window !== 'undefined' && WebApp.initDataUnsafe.user) {
@@ -47,7 +74,6 @@ const EarnPage = () => {
 
   useEffect(() => {
     if (userId) {
-      // Check Telegram membership first
       const checkTelegramMembership = async () => {
         try {
           const response = await fetch(`/api/checkMembership?userId=${userId}`);
@@ -59,15 +85,14 @@ const EarnPage = () => {
             data.result.status === 'creator';
 
           if (isMember) {
-            // If the user is a member, treat the action as completed even if it wasn't saved
             setCompletedActions((prev) => ({ ...prev, "Join our TG channel": true }));
           }
 
           setTgMembership(isMember);
-          setIsMemberChecked(true); // Mark membership check as complete
+          setIsMemberChecked(true);
         } catch (error) {
           console.error('Error checking Telegram membership:', error);
-          setIsMemberChecked(true); // Ensure membership check is marked complete even on error
+          setIsMemberChecked(true);
         }
       };
 
@@ -77,7 +102,6 @@ const EarnPage = () => {
 
   useEffect(() => {
     if (isMemberChecked) {
-      // Fetch saved user actions only after checking Telegram membership
       const fetchCompletedActions = async () => {
         try {
           const response = await fetch(`/api/user/actions?userId=${userId}`);
@@ -87,8 +111,6 @@ const EarnPage = () => {
             const actionStatus = {};
             options.forEach((option) => {
               if (option.text === "Join our TG channel") {
-                // If the user is confirmed as a member, the button is already set to 'Check'
-                // We don't need to override it based on saved actions
                 if (!tgMembership) {
                   actionStatus[option.text] = data.completedActions.includes(option.text);
                 }
@@ -112,7 +134,6 @@ const EarnPage = () => {
   const handleJoinClick = async (event, option) => {
     event.preventDefault();
 
-    // Open the link in a new tab
     window.open(option.link, '_blank');
 
     if (userId) {
@@ -126,7 +147,6 @@ const EarnPage = () => {
         });
 
         if (response.ok) {
-          // Save the action in state to mark it as completed
           setCompletedActions((prev) => ({ ...prev, [option.text]: true }));
         } else {
           const data = await response.json();
@@ -138,32 +158,40 @@ const EarnPage = () => {
     }
   };
 
+  const handleCardClick = (option) => {
+    setSelectedOption(option); // Set the selected card
+    setIsModalOpen(true); // Open the modal
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false); // Close the modal
+    setSelectedOption(null); // Clear the selected option
+  };
+
   return (
     <div className={styles.container}>
       <div className={styles.earnOptions}>
         {options.map((option, index) => (
-          <div key={index} className={styles.option}>
+          <div key={index} className={styles.option} onClick={() => handleCardClick(option)}>
             <Image className={styles.image} src={option.icon} alt={option.text} width={60} height={60} />
             <div className={styles.text}>
               <p>{option.text}</p>
               <span>{`+${option.points}`}</span>
             </div>
-            <div className={styles.button}>
-              <button
-                id={option.text}
-                className={`${styles.joinButton} ${
-                  (option.requiresCheck && tgMembership) || completedActions[option.text] ? styles.checkButton : ''
-                }`}
-                onClick={(e) => handleJoinClick(e, option)}
-              >
-                {(option.requiresCheck && tgMembership) || completedActions[option.text]
-                  ? 'Check'
-                  : 'Join'}
-              </button>
-            </div>
           </div>
         ))}
       </div>
+
+      {selectedOption && (
+        <Modal
+          option={selectedOption}
+          isOpen={isModalOpen}
+          onClose={closeModal}
+          handleJoinClick={handleJoinClick}
+          completedActions={completedActions}
+          tgMembership={tgMembership}
+        />
+      )}
     </div>
   );
 };
