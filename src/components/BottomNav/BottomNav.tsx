@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import useScrollingEffect from '../../hooks/use-scroll';
@@ -10,6 +10,13 @@ const BottomNav: React.FC = () => {
   const [activeLink, setActiveLink] = useState<string>('/');
   const scrollDirection = useScrollingEffect();
   const navClass = scrollDirection === 'up' ? '' : 'opacity-25 duration-500';
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const currentPath = window.location.pathname; // Get the current path
+      setActiveLink(currentPath);
+    }
+  }, []);
 
   const handleLinkClick = (path: string) => {
     setActiveLink(path);

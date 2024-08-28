@@ -6,6 +6,7 @@
     text-align: center;
     width: 100%;
     padding: 20px;
+    margin-bottom: 40px;
 }
 
 .container__header {
@@ -50,7 +51,7 @@
 }
 
 .text p {
-    margin: 0;
+    margin-bottom: 20;
     font-size: 0.9rem;
 }
 

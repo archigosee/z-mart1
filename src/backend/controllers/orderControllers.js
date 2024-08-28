@@ -5,7 +5,6 @@ import { updateCommission } from './commissionController';
 export const newOrder = async (req, res) => {
   const { userId, orderItems, totalAmount, commissionamount } = req.body;
 
-  // Log the request body to verify commissionamount
   console.log('Request body:', req.body);
 
   try {
@@ -17,7 +16,6 @@ export const newOrder = async (req, res) => {
       paymentStatus: 'Pending',
     });
 
-    // Log the created order to verify commissionamount
     console.log('Created order:', order);
 
     await updateCommission(userId, commissionamount);
@@ -44,7 +42,6 @@ const sendOrderNotificationToTelegram = async (userId, order) => {
     *Order Items:*\n${order.orderItems.map(item => `- ${item.name} (${item.quantity}x): $${item.price}`).join('\n')}
   `;
 
-  // Log the message to verify commissionamount
   console.log('Message to send:', message);
 
   try {
@@ -57,9 +54,13 @@ const sendOrderNotificationToTelegram = async (userId, order) => {
     console.error("Error sending order notification to Telegram:", error);
   }
 };
+
 export const getOrders = async (req, res) => {
+  const { userId } = req.query;
+
   try {
-    const orders = await Order.find();
+    // Fetch orders based on the userId
+    const orders = await Order.find({ userId }).sort({ createdAt: -1 }); // Sort by creation date, newest first
     res.status(200).json({ success: true, data: orders });
   } catch (error) {
     console.error('Error fetching orders:', error);

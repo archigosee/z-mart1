@@ -1,15 +1,15 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import WebApp from "@twa-dev/sdk"; // Import the Telegram SDK
+import WebApp from "@twa-dev/sdk";
 
 const History = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [userId, setUserId] = useState(null); // State to hold the user ID
+  const [userId, setUserId] = useState(null);
+  const [visibleOrders, setVisibleOrders] = useState(3); // Number of visible orders
 
   useEffect(() => {
-    // Fetch the user ID from Telegram WebApp
     if (typeof window !== "undefined" && WebApp.initDataUnsafe.user) {
       setUserId(WebApp.initDataUnsafe.user.id);
     }
@@ -17,7 +17,7 @@ const History = () => {
 
   useEffect(() => {
     const fetchOrders = async () => {
-      if (!userId) return; // Wait for userId to be available
+      if (!userId) return;
 
       try {
         const response = await fetch(`/api/orders?userId=${userId}`);
@@ -34,7 +34,11 @@ const History = () => {
     };
 
     fetchOrders();
-  }, [userId]); // Fetch orders when userId is available
+  }, [userId]);
+
+  const handleShowMore = () => {
+    setVisibleOrders((prev) => prev + 3); // Show 3 more orders
+  };
 
   if (loading) {
     return <p>Loading...</p>;
@@ -45,14 +49,24 @@ const History = () => {
   }
 
   return (
-    <div className="container max-w-screen-xl mx-auto px-4 py-5">
+    <div className="container max-w-screen-xl mx-auto px-4 py-5 mb-10">
       <h1 className="text-3xl font-semibold mb-4">Order History</h1>
       <div className="grid grid-cols-1 gap-4">
-        {orders.map((order) => (
+        {orders.slice(0, visibleOrders).map((order) => (
           <div key={order._id} className="border border-gray-200 bg-white p-4 rounded shadow-sm">
-            <h2 className="text-2xl font-semibold mb-2">Order ID: {order._id}</h2>
+          <h2
+              className="text-2xl font-semibold mb-2 truncate"
+              style={{
+                overflowX: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              Order ID: {order._id}
+            </h2>
             <p><strong>Total Amount:</strong> ${order.totalAmount}</p>
             <p><strong>Status:</strong> {order.paymentStatus}</p>
+            <p><strong>Created At:</strong> {new Date(order.createdAt).toLocaleString()}</p>
             <ul className="mt-4">
               {order.orderItems.map((item) => (
                 <li key={item.product} className="mb-2">
@@ -65,6 +79,11 @@ const History = () => {
           </div>
         ))}
       </div>
+      {visibleOrders < orders.length && (
+        <button onClick={handleShowMore} className="mt-4 text-blue-500 hover:underline block text-center mx-auto">
+          Show More
+        </button>
+      )}
     </div>
   );
 };
