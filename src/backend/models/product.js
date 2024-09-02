@@ -13,6 +13,11 @@ const productSchema = new mongoose.Schema({
     type: Number,
     required: [true, "Please enter product price"],
   },
+  commission: {
+    type: Number,
+    required: [true, "Please enter product commission"], // Added commission field
+    default: 0,
+  },
   images: [
     {
       public_id: {
@@ -23,7 +28,6 @@ const productSchema = new mongoose.Schema({
       },
     },
   ],
-
   category: {
     type: String,
     required: [true, "Please enter product category"],

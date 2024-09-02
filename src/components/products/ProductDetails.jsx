@@ -27,18 +27,24 @@ const ProductDetails = ({ product }) => {
   const inStock = product?.stock >= 1;
 
   const addToCartHandler = () => {
-    addItemToCart({
-      product: product._id,
-      name: product.name,
-      price: product.price,
-      image: product.images[0].url,
-      stock: product.stock,
-      seller: product.seller,
-    });
-
-    // Update the button to show "View in Cart"
-    setInCart(true);
+    try {
+      addItemToCart({
+        product: product._id,
+        name: product.name,
+        price: product.price,
+        commission: product.commission || 0, // Include the commission
+        image: product.images[0]?.url || "/images/default_product.png",
+        stock: product.stock,
+        seller: product.seller,
+      });
+  
+      // Update the button to show "View in Cart"
+      setInCart(true);
+    } catch (error) {
+      console.error("Failed to add item to cart:", error);
+    }
   };
+  
 
   const handleViewInCart = () => {
     // Redirect to the cart page
@@ -120,7 +126,7 @@ const ProductDetails = ({ product }) => {
                 <span className="text-green-500">Verified</span>
               </div>
 
-              <p className="mb-4 font-semibold text-xl">${product?.price}</p>
+              <p className="mb-4 font-semibold text-xl">{product?.price} Birr</p>
 
               <p className="mb-4 text-gray-500">{product?.description}</p>
 

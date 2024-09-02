@@ -20,9 +20,9 @@ const userSchema = new mongoose.Schema({
     type: Number,
     default: 0, // Store the commission earned by the user
   },
-  isPremium: {
+  hasJoinedViaInvite: {
     type: Boolean,
-    default: false,
+    default: false, // New field to track if the user has joined via an invite link
   },
 });
 

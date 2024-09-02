@@ -7,7 +7,7 @@ const History = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState(null);
-  const [visibleOrders, setVisibleOrders] = useState(3); // Number of visible orders
+  const [visibleOrders, setVisibleOrders] = useState(3);
 
   useEffect(() => {
     if (typeof window !== "undefined" && WebApp.initDataUnsafe.user) {
@@ -37,7 +37,7 @@ const History = () => {
   }, [userId]);
 
   const handleShowMore = () => {
-    setVisibleOrders((prev) => prev + 3); // Show 3 more orders
+    setVisibleOrders((prev) => prev + 3);
   };
 
   if (loading) {
@@ -53,8 +53,8 @@ const History = () => {
       <h1 className="text-3xl font-semibold mb-4">Order History</h1>
       <div className="grid grid-cols-1 gap-4">
         {orders.slice(0, visibleOrders).map((order) => (
-          <div key={order._id} className="border border-gray-200 bg-white p-4 rounded shadow-sm">
-          <h2
+          <div key={order.orderId} className="border border-gray-200 bg-white p-4 rounded shadow-sm">
+            <h2
               className="text-2xl font-semibold mb-2 truncate"
               style={{
                 overflowX: "hidden",
@@ -62,7 +62,7 @@ const History = () => {
                 whiteSpace: "nowrap",
               }}
             >
-              Order ID: {order._id}
+              Order ID: {order.orderId}
             </h2>
             <p><strong>Total Amount:</strong> ${order.totalAmount}</p>
             <p><strong>Status:</strong> {order.paymentStatus}</p>

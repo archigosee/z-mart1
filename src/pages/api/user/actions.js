@@ -1,5 +1,5 @@
 import dbConnect from '../../../backend/config/dbConnect';
-import User from '../../../backend/models/user'; // Assuming you have a User model
+import User from '../../../backend/models/user';// Assuming you have a User model
 import UserAction from '../../../backend/models/useraction';
 
 export default async function handler(req, res) {

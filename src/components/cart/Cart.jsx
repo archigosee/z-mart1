@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import CartContext from "@/context/CartContext";
 import Link from "next/link";
 import Image from "next/image";
-import WebApp from '@twa-dev/sdk'; // Import the Telegram WebApp SDK
+import WebApp from "@twa-dev/sdk"; // Import the Telegram WebApp SDK
 
 const Cart = () => {
   const { cart, addItemToCart, deleteItemFromCart, clearCart } = useContext(CartContext);
@@ -14,13 +14,38 @@ const Cart = () => {
   const [selectedOption, setSelectedOption] = useState("self");
   const [address, setAddress] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [productCommissions, setProductCommissions] = useState({});
 
   useEffect(() => {
     // Fetch the user data from Telegram WebApp SDK
-    if (typeof window !== 'undefined' && WebApp.initDataUnsafe.user) {
+    if (typeof window !== "undefined" && WebApp.initDataUnsafe.user) {
       setUserData(WebApp.initDataUnsafe.user);
     }
   }, []);
+
+  useEffect(() => {
+    // Fetch product commissions when cart items change
+    const fetchCommissions = async () => {
+      const commissions = {};
+      for (const item of cart.cartItems) {
+        try {
+          const response = await fetch(`/api/products/${item.product}`);
+          const productData = await response.json();
+
+          console.log(`Product Data for ${item.product}:`, productData); // Check the product data
+          commissions[item.product] = productData?.product?.commission || 0; // Access commission correctly
+        } catch (error) {
+          console.error(`Failed to fetch commission for product ${item.product}:`, error);
+        }
+      }
+      console.log("Fetched Commissions:", commissions); // Debugging line
+      setProductCommissions(commissions);
+    };
+
+    if (cart.cartItems.length > 0) {
+      fetchCommissions();
+    }
+  }, [cart.cartItems]);
 
   const increaseQty = (cartItem) => {
     const newQty = cartItem?.quantity + 1;
@@ -37,46 +62,50 @@ const Cart = () => {
   };
 
   const amountWithoutcom = cart?.cartItems?.reduce(
-    (acc, item) => acc + (Number(item.quantity) * Number(item.price)),
+    (acc, item) => acc + Number(item.quantity) * Number(item.price),
     0
   );
-
-  const commissionamount = (amountWithoutcom * 0.02).toFixed(2);
-  const totalAmount = (Number(amountWithoutcom) + Number(commissionamount)).toFixed(2);
-
+  
+  const commissionamount = cart?.cartItems?.reduce(
+    (acc, item) => 
+      acc + (Number(item.quantity) * Number(item.price) * (Number(productCommissions[item.product] || 0) / 100)),
+    0
+  ).toFixed(2);
+  
+  const totalAmount = (Number(amountWithoutcom)).toFixed(2);
+  
   const handleContinue = async () => {
     try {
       const orderItems = cart.cartItems.map((item) => ({
         name: item.name,
         quantity: item.quantity,
         image: item.image,
-        price: item.price,
+        price: (item.price * item.quantity).toFixed(2), // Calculate the total price for the item
         product: item.product,
       }));
-
+  
       const userId = userData?.id;
-
+  
       if (!userId) {
-        console.error('User ID is not available. Cannot place order.');
+        console.error("User ID is not available. Cannot place order.");
         return;
       }
-
+  
       if (orderItems.length === 0 || totalAmount <= 0) {
-        console.error('Invalid order details. Cannot place order.');
+        console.error("Invalid order details. Cannot place order.");
         return;
       }
-
+  
       let orderDetails = {
         userId,
         orderItems,
         totalAmount,
         commissionamount: Number(commissionamount),
       };
-
-      // Add address and phone number if "Other" is selected
+  
       if (selectedOption === "other") {
         if (!address || !phoneNumber) {
-          console.error('Please provide address and phone number.');
+          console.error("Please provide address and phone number.");
           return;
         }
         orderDetails = {
@@ -85,23 +114,21 @@ const Cart = () => {
           phoneNumber,
         };
       }
-
-      // Place the order
-      const response = await fetch('/api/orders', {
-        method: 'POST',
+  
+      const response = await fetch("/api/orders", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(orderDetails),
       });
-
+  
       if (response.ok) {
-        // Award 2000 points if the total amount is more than $200
         if (totalAmount > 200) {
-          await fetch('/api/points', {
-            method: 'POST',
+          await fetch("/api/points", {
+            method: "POST",
             headers: {
-              'Content-Type': 'application/json',
+              "Content-Type": "application/json",
             },
             body: JSON.stringify({
               userId,
@@ -109,18 +136,19 @@ const Cart = () => {
             }),
           });
         }
-
+  
         clearCart();
-        router.push('/order-confirmed');
+        router.push("/order-confirmed");
       } else {
-        console.error('Failed to create order:', response.statusText);
+        console.error("Failed to create order:", response.statusText);
         const errorData = await response.json();
-        console.error('Error details:', errorData);
+        console.error("Error details:", errorData);
       }
     } catch (error) {
-      console.error('Error creating order:', error);
+      console.error("Error creating order:", error);
     }
   };
+  
 
   return (
     <>
@@ -191,10 +219,10 @@ const Cart = () => {
                           </div>
                           <div className="text-right">
                             <p className="font-semibold not-italic">
-                              ${(cartItem.price * cartItem.quantity).toFixed(2)}
+                              birr{(cartItem.price * cartItem.quantity).toFixed(2)}
                             </p>
                             <small className="text-gray-400">
-                              ${cartItem.price} / per item
+                              birr{cartItem.price} / per item
                             </small>
                           </div>
                         </div>
@@ -220,7 +248,7 @@ const Cart = () => {
                   <ul className="mb-5">
                     <li className="flex justify-between text-gray-600 mb-1">
                       <span>Price:</span>
-                      <span>${amountWithoutcom}</span>
+                      <span>{amountWithoutcom} Birr</span>
                     </li>
                     <li className="flex justify-between text-gray-600 mb-1">
                       <span>Total Units:</span>
@@ -234,11 +262,11 @@ const Cart = () => {
                     </li>
                     <li className="flex justify-between text-gray-600 mb-1">
                       <span>Commission:</span>
-                      <span>${commissionamount}</span>
+                      <span>{commissionamount} Birr</span>
                     </li>
                     <li className="text-lg font-bold border-t flex justify-between mt-3 pt-3">
                       <span>Total price:</span>
-                      <span>${totalAmount}</span>
+                      <span>{totalAmount} Birr</span>
                     </li>
                   </ul>
 
@@ -303,10 +331,10 @@ const Cart = () => {
                     Continue
                   </button>
 
-                  <Link href="/">
-                    <span className="px-4 py-3 inline-block text-lg w-full text-center font-medium text-green-600 bg-white shadow-sm border border-gray-200 rounded-md hover:bg-gray-100">
+                  <Link href="/" legacyBehavior>
+                    <a className="px-4 py-3 inline-block text-lg w-full text-center font-medium text-green-600 bg-white shadow-sm border border-gray-200 rounded-md hover:bg-gray-100">
                       Back to shop
-                    </span>
+                    </a>
                   </Link>
                 </article>
               </aside>
@@ -317,10 +345,10 @@ const Cart = () => {
         <section className="py-10">
           <div className="container max-w-screen-xl mx-auto px-4 text-center">
             <h2 className="text-2xl font-semibold mb-4">Your cart is empty</h2>
-            <Link href="/">
-              <span className="px-4 py-2 inline-block text-lg font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700">
+            <Link href="/" legacyBehavior>
+              <a className="px-4 py-2 inline-block text-lg font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700">
                 Back to Shop
-              </span>
+              </a>
             </Link>
           </div>
         </section>

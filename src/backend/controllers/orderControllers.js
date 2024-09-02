@@ -3,7 +3,7 @@ import axios from 'axios';
 import { updateCommission } from './commissionController';
 
 export const newOrder = async (req, res) => {
-  const { userId, orderItems, totalAmount, commissionamount } = req.body;
+  const { userId, orderItems, totalAmount, commissionamount, address, phoneNumber } = req.body;
 
   console.log('Request body:', req.body);
 
@@ -13,6 +13,8 @@ export const newOrder = async (req, res) => {
       orderItems,
       totalAmount,
       commissionamount,
+      address,  // Save address
+      phoneNumber,  // Save phone number
       paymentStatus: 'Pending',
     });
 
@@ -33,14 +35,18 @@ const sendOrderNotificationToTelegram = async (userId, order) => {
   const chatId = userId;
   const apiUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
 
-  const message = `
+  let message = `
     🛒 *Order Confirmation*\n
-    Order ID: ${order._id}\n
-    Total Amount: $${order.totalAmount}\n
+    Order ID: ${order.orderId}\n
+    Total Amount: ${order.totalAmount} birr\n
     Payment Status: ${order.paymentStatus}\n
-    Commission: ${order.commissionamount}\n\n
-    *Order Items:*\n${order.orderItems.map(item => `- ${item.name} (${item.quantity}x): $${item.price}`).join('\n')}
+    Commission: ${order.commissionamount} birr\n\n
+    *Order Items:*\n${order.orderItems.map(item => `- ${item.name} (${item.quantity}x): ${item.price} birr`).join('\n')}
   `;
+
+  if (order.address && order.phoneNumber) {
+    message += `\n*Shipping Details:*\nAddress: ${order.address}\nPhone Number: ${order.phoneNumber}\n`;
+  }
 
   console.log('Message to send:', message);
 
@@ -54,6 +60,7 @@ const sendOrderNotificationToTelegram = async (userId, order) => {
     console.error("Error sending order notification to Telegram:", error);
   }
 };
+
 
 export const getOrders = async (req, res) => {
   const { userId } = req.query;
