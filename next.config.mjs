@@ -2,7 +2,7 @@
 const nextConfig = {
     env:{
         API_URL:"http://localhost:3000",
-        DB_URI:"mongodb://localhost:27017/mart"
+        DB_URI:"mongodb+srv://kaleabnew21:kaleab1221@mart.tywhp.mongodb.net/?retryWrites=true&w=majority&appName=Mart"
     },
     images:{
         domains:['res.cloudinary.com']

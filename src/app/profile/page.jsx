@@ -3,6 +3,7 @@
 
 import React, { useEffect, useState } from 'react';
 import WebApp from '@twa-dev/sdk';
+import './Profile.css'; // Import the CSS file
 
 const Profile = () => {
   const [userData, setUserData] = useState(null);
@@ -44,31 +45,31 @@ const Profile = () => {
   }
 
   return (
-    <div className="container max-w-screen-md mx-auto px-4 py-5 h-screen overflow-auto">
-      <h1 className="text-3xl font-semibold mb-4">Profile</h1>
-      <div className="bg-white shadow-sm rounded p-4">
-        <div className="flex items-center mb-4">
+    <div className="container">
+      <h1 className="profile-title">Profile</h1>
+      <div className="profile-card">
+        <div className="profile-header">
           <img
-            src={userData.photo_url || '/images/default.png'}
+            src={userData.photo_url || '/images/default_avatar.png'}
             alt="Profile Picture"
-            className="w-20 h-20 rounded-full mr-4"
+            className="profile-picture"
           />
           <div>
-            <h2 className="text-xl font-semibold">{userData.first_name} {userData.last_name}</h2>
-            <p className="text-gray-600">@{userData.username}</p>
+            <h2 className="profile-name">{userData.first_name} {userData.last_name}</h2>
+            <p className="profile-username">@{userData.username}</p>
           </div>
         </div>
 
-        <div className="mt-4">
-          <h3 className="text-lg font-semibold">Account Information</h3>
-          <ul className="mt-2 space-y-2">
+        <div className="profile-info">
+          <h3 className="profile-info-title">Account Information</h3>
+          <ul className="profile-info-list">
             <li><strong>ID:</strong> {userData.id}</li>
             <li><strong>First Name:</strong> {userData.first_name}</li>
             {userData.last_name && <li><strong>Last Name:</strong> {userData.last_name}</li>}
             <li><strong>Username:</strong> @{userData.username}</li>
             <li><strong>Phone Number:</strong> {phoneNumber}</li> {/* Display phone number */}
             <li><strong>Total Points:</strong> {points}</li> {/* Display total points */}
-            <li><strong>Total Commission:</strong> ${commission.toFixed(2)}</li> {/* Display total commission */}
+            <li><strong>Total Commission:</strong> {commission.toFixed(2)} birr</li> {/* Display total commission */}
           </ul>
         </div>
       </div>

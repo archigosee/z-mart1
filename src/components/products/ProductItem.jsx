@@ -67,9 +67,9 @@ const ProductItem = ({ product }) => {
             {product?.price} Birr 
           </span>
           <span className="text-xl text-black">
-            {product?.commission}% Commission
+          Commission: {product?.commission} birr 
           </span>
-          <p className="text-green-500">Free Shipping</p>
+          <p className="text-green-500">Free Delivery</p>
           <div className="my-3">
             {inCart ? (
               <button

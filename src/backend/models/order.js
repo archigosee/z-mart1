@@ -1,6 +1,9 @@
+// src/backend/models/order.js
+
 import mongoose from 'mongoose';
 import { nanoid } from 'nanoid';
 
+// Define order item schema
 const orderItemSchema = new mongoose.Schema({
   product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
   name: { type: String, required: true },
@@ -9,6 +12,7 @@ const orderItemSchema = new mongoose.Schema({
   image: { type: String, required: true },
 });
 
+// Define order schema
 const orderSchema = new mongoose.Schema({
   orderId: {
     type: String,
@@ -19,9 +23,14 @@ const orderSchema = new mongoose.Schema({
   userId: { type: String, required: true },
   orderItems: [orderItemSchema],
   totalAmount: { type: Number, required: true },
-  commissionamount: { type: Number, required: true },
-  address: { type: String },  // Added address field
-  phoneNumber: { type: String },  // Added phone number field
+  commissionamount: { type: Number },  // Store the commission amount
+  commissionStatus: {  // Track the status of the commission
+    type: String,
+    enum: ['pending', 'completed'],
+    default: 'pending',  // Initially set commission to 'pending'
+  },
+  address: { type: String },
+  phoneNumber: { type: String },
   paymentStatus: {
     type: String,
     default: 'Pending',
@@ -32,4 +41,5 @@ const orderSchema = new mongoose.Schema({
   },
 });
 
+// Export the model
 export default mongoose.models.Order || mongoose.model('Order', orderSchema);

@@ -1,3 +1,9 @@
+// pages/api/checkMembership.js
+
+import dbConnect from '../../../backend/config/dbConnect';
+import User from '../../../backend/models/user';
+import UserAction from '../../../backend/models/useraction';
+
 export default async function handler(req, res) {
   const { userId } = req.query;
 
@@ -6,7 +12,7 @@ export default async function handler(req, res) {
   }
 
   const TELEGRAM_BOT_TOKEN = '7350305630:AAEsjUdDvgDlsXhToZel8NoI3SCxpv5lIrE';
-  const TELEGRAM_CHANNEL_ID = '@dz_ech'; // Example: '@your_channel_id'
+  const TELEGRAM_CHANNEL_ID = '@dz_ech';
 
   try {
     const response = await fetch(
@@ -14,7 +20,6 @@ export default async function handler(req, res) {
     );
     const data = await response.json();
 
-    // Log the API response for debugging
     console.log('Telegram API Response:', data);
 
     if (!data.ok) {
@@ -26,7 +31,39 @@ export default async function handler(req, res) {
       data.result.status === 'administrator' ||
       data.result.status === 'creator';
 
-    res.json({ isMember });
+    if (isMember) {
+      await dbConnect();
+
+      // Save the action to the database with 0 points
+      const newAction = new UserAction({
+        userId,
+        action: 'Join our TG channel',
+        points: 0,
+        timestamp: new Date(),
+      });
+
+      await newAction.save();
+
+      // Update the user's total points
+      const user = await User.findOne({ userId });
+      if (user) {
+        user.points = (user.points || 0);
+        await user.save();
+      } else {
+        // If user doesn't exist, create a new one with 0 points
+        await User.create({ userId, points: 0 });
+      }
+
+      res.json({
+        isMember,
+        completedAction: 'Join our TG channel',
+      });
+    } else {
+      res.json({
+        isMember,
+        completedAction: null,
+      });
+    }
   } catch (error) {
     console.error('Error checking Telegram membership:', error);
     res.status(500).json({ message: 'Internal server error', error: error.message });

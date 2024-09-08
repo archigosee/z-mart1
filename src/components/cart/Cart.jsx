@@ -13,32 +13,34 @@ const Cart = () => {
   const [userData, setUserData] = useState(null);
   const [selectedOption, setSelectedOption] = useState("self");
   const [address, setAddress] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState(""); // Initialize phoneNumber state
   const [productCommissions, setProductCommissions] = useState({});
 
+  // Fetch user data from Telegram WebApp SDK
   useEffect(() => {
-    // Fetch the user data from Telegram WebApp SDK
     if (typeof window !== "undefined" && WebApp.initDataUnsafe.user) {
       setUserData(WebApp.initDataUnsafe.user);
+
+      // Use the user's shared phone number if available
+      if (WebApp.initDataUnsafe.user.phone_number) {
+        setPhoneNumber(WebApp.initDataUnsafe.user.phone_number);
+      }
     }
   }, []);
 
+  // Fetch product commissions based on the cart items
   useEffect(() => {
-    // Fetch product commissions when cart items change
     const fetchCommissions = async () => {
       const commissions = {};
       for (const item of cart.cartItems) {
         try {
           const response = await fetch(`/api/products/${item.product}`);
           const productData = await response.json();
-
-          console.log(`Product Data for ${item.product}:`, productData); // Check the product data
-          commissions[item.product] = productData?.product?.commission || 0; // Access commission correctly
+          commissions[item.product] = productData?.product?.commission || 0;
         } catch (error) {
           console.error(`Failed to fetch commission for product ${item.product}:`, error);
         }
       }
-      console.log("Fetched Commissions:", commissions); // Debugging line
       setProductCommissions(commissions);
     };
 
@@ -47,62 +49,72 @@ const Cart = () => {
     }
   }, [cart.cartItems]);
 
+  // Increase item quantity
   const increaseQty = (cartItem) => {
     const newQty = cartItem?.quantity + 1;
     if (newQty > Number(cartItem.stock)) return;
-
     addItemToCart({ ...cartItem, quantity: newQty });
   };
 
+  // Decrease item quantity
   const decreaseQty = (cartItem) => {
     const newQty = cartItem?.quantity - 1;
     if (newQty <= 0) return;
-
     addItemToCart({ ...cartItem, quantity: newQty });
   };
 
+  // Calculate total without commission
   const amountWithoutcom = cart?.cartItems?.reduce(
     (acc, item) => acc + Number(item.quantity) * Number(item.price),
     0
   );
-  
+
+  // Calculate total commission
   const commissionamount = cart?.cartItems?.reduce(
-    (acc, item) => 
-      acc + (Number(item.quantity) * Number(item.price) * (Number(productCommissions[item.product] || 0) / 100)),
+    (acc, item) => acc + Number(item.quantity) * Number(productCommissions[item.product] || 0),
     0
   ).toFixed(2);
-  
+
+  // Calculate total amount including commission
   const totalAmount = (Number(amountWithoutcom)).toFixed(2);
-  
+
+  // Handle order creation
   const handleContinue = async () => {
     try {
       const orderItems = cart.cartItems.map((item) => ({
         name: item.name,
         quantity: item.quantity,
         image: item.image,
-        price: (item.price * item.quantity).toFixed(2), // Calculate the total price for the item
+        price: (item.price * item.quantity).toFixed(2), // Total price for each item
         product: item.product,
       }));
-  
+
       const userId = userData?.id;
-  
       if (!userId) {
         console.error("User ID is not available. Cannot place order.");
         return;
       }
-  
       if (orderItems.length === 0 || totalAmount <= 0) {
         console.error("Invalid order details. Cannot place order.");
         return;
       }
-  
+
+      // Calculate commission amount
+      const commissionamount = cart.cartItems.reduce(
+        (acc, item) => acc + Number(item.quantity) * Number(productCommissions[item.product] || 0),
+        0
+      ).toFixed(2);
+
       let orderDetails = {
         userId,
         orderItems,
         totalAmount,
         commissionamount: Number(commissionamount),
+        commissionStatus: 'pending',
+        phoneNumber: phoneNumber,  // Use phone number from state
       };
-  
+
+      // If "other" is selected, require address and phone number
       if (selectedOption === "other") {
         if (!address || !phoneNumber) {
           console.error("Please provide address and phone number.");
@@ -114,7 +126,7 @@ const Cart = () => {
           phoneNumber,
         };
       }
-  
+
       const response = await fetch("/api/orders", {
         method: "POST",
         headers: {
@@ -122,21 +134,8 @@ const Cart = () => {
         },
         body: JSON.stringify(orderDetails),
       });
-  
+
       if (response.ok) {
-        if (totalAmount > 200) {
-          await fetch("/api/points", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              userId,
-              points: 2000,
-            }),
-          });
-        }
-  
         clearCart();
         router.push("/order-confirmed");
       } else {
@@ -148,7 +147,6 @@ const Cart = () => {
       console.error("Error creating order:", error);
     }
   };
-  
 
   return (
     <>

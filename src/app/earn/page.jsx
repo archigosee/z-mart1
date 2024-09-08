@@ -3,35 +3,58 @@
 import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import WebApp from '@twa-dev/sdk';
-import { FaInstagram, FaTelegramPlane, FaFacebook } from 'react-icons/fa'; // Import social media icons
+import { FaInstagram, FaTelegramPlane, FaFacebook } from 'react-icons/fa';
 import styles from './index.module.css';
 
-// Modal Component
-const Modal = ({ option, isOpen, onClose, handleJoinClick, completedActions, tgMembership, inviteLink }) => {
+const Modal = ({
+  option,
+  isOpen,
+  onClose,
+  handleCheckClick,
+  completedActions,
+  inviteLink,
+  joinClicked,
+}) => {
+  const [isCopied, setIsCopied] = useState(false);
+
   if (!isOpen) return null;
 
-  // Social media share URLs
   const instagramShareUrl = `https://www.instagram.com/?url=${encodeURIComponent(inviteLink)}`;
   const telegramShareUrl = `https://t.me/share/url?url=${encodeURIComponent(inviteLink)}&text=Join%20now!`;
   const facebookShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(inviteLink)}`;
 
+  const handleCopyClick = () => {
+    navigator.clipboard.writeText(inviteLink);
+    setIsCopied(true);
+  };
+
+  const modalClass = `${styles.modalContent} ${
+    option.text === 'Invite Your Friend' ? styles.longerModal : ''
+  }`;
+
   return (
     <div className={styles.modalOverlay}>
-      <div className={styles.modalContent}>
-        <button className={styles.closeButton} onClick={onClose}>×</button>
+      <div className={modalClass}>
+        <button className={styles.closeButton} onClick={onClose}>
+          ×
+        </button>
         <h2>{option.text}</h2>
-        <p>Earn {option.points} points by completing this action.</p>
-        <Image className={styles.image} src={option.icon} alt={option.text} width={60} height={60} />
+        <p>Earn points by completing this action.</p>
+        <h1>{option.points}</h1>
+        <Image
+          className={styles.image}
+          src={option.icon}
+          alt={option.text}
+          width={60}
+          height={60}
+        />
 
-        {/* Conditional rendering for "Invite Your Friend" */}
         {option.text === 'Invite Your Friend' ? (
           <div>
             <p>{inviteLink}</p>
-            <button className={styles.copyButton} onClick={() => navigator.clipboard.writeText(inviteLink)}>
-              Copy Link
+            <button className={styles.copyButton} onClick={handleCopyClick}>
+              {isCopied ? 'Copied!' : 'Copy Link'}
             </button>
-
-            {/* Social Media Sharing Icons */}
             <div className={styles.socialIcons}>
               <a href={instagramShareUrl} target="_blank" rel="noopener noreferrer">
                 <FaInstagram size={30} className={styles.icon} />
@@ -48,11 +71,11 @@ const Modal = ({ option, isOpen, onClose, handleJoinClick, completedActions, tgM
           <button
             id={option.text}
             className={`${styles.joinButton} ${
-              (option.requiresCheck && tgMembership) || completedActions[option.text] ? styles.checkButton : ''
+              completedActions[option.text] || joinClicked ? styles.checkButton : ''
             }`}
-            onClick={(e) => handleJoinClick(e, option)}
+            onClick={(e) => handleCheckClick(e, option, joinClicked)}
           >
-            {(option.requiresCheck && tgMembership) || completedActions[option.text] ? 'Check' : 'Join'}
+            {completedActions[option.text] ? 'Check' : joinClicked ? 'Check' : 'Join'}
           </button>
         )}
       </div>
@@ -62,20 +85,18 @@ const Modal = ({ option, isOpen, onClose, handleJoinClick, completedActions, tgM
 
 const EarnPage = () => {
   const [userId, setUserId] = useState(null);
-  const [options, setOptions] = useState([]); // State to hold the fetched options
-  const [loading, setLoading] = useState(true); // State to manage loading state
+  const [options, setOptions] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [completedActions, setCompletedActions] = useState({});
-  const [tgMembership, setTgMembership] = useState(false);
-  const [isMemberChecked, setIsMemberChecked] = useState(false);
-  const [selectedOption, setSelectedOption] = useState(null); // Track selected card
-  const [isModalOpen, setIsModalOpen] = useState(false); // Track modal state
-  const [inviteLink, setInviteLink] = useState(''); // State to hold the invite link
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedOption, setSelectedOption] = useState(null);
+  const [inviteLink, setInviteLink] = useState('');
+  const [joinClicked, setJoinClicked] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && WebApp.initDataUnsafe.user) {
       setUserId(WebApp.initDataUnsafe.user.id);
 
-      // Generate and store the invite link when userId is available
       const generateInviteLink = async () => {
         try {
           const response = await fetch(`/api/invite`, {
@@ -104,17 +125,19 @@ const EarnPage = () => {
   useEffect(() => {
     const fetchOptions = async () => {
       try {
-        const response = await fetch('/api/earnOptions'); // Fetch options from your API
+        const response = await fetch('/api/earnOptions');
         const data = await response.json();
         if (response.ok) {
-          setOptions(data.data); // Set the fetched options
+          const inviteOption = data.data.find(option => option.text === 'Invite Your Friend');
+          const otherOptions = data.data.filter(option => option.text !== 'Invite Your Friend');
+          setOptions([inviteOption, ...otherOptions]);
         } else {
           console.error('Failed to fetch options:', data.message);
         }
       } catch (error) {
         console.error('Error fetching options:', error);
       } finally {
-        setLoading(false); // Set loading to false once data is fetched
+        setLoading(false);
       }
     };
 
@@ -128,20 +151,14 @@ const EarnPage = () => {
           const response = await fetch(`/api/checkMembership?userId=${userId}`);
           const data = await response.json();
 
-          const isMember =
-            data.result.status === 'member' ||
-            data.result.status === 'administrator' ||
-            data.result.status === 'creator';
-
-          if (isMember) {
-            setCompletedActions((prev) => ({ ...prev, "Join our TG channel": true }));
+          if (data.isMember) {
+            setCompletedActions((prev) => ({
+              ...prev,
+              [data.completedAction]: true,
+            }));
           }
-
-          setTgMembership(isMember);
-          setIsMemberChecked(true);
         } catch (error) {
           console.error('Error checking Telegram membership:', error);
-          setIsMemberChecked(true);
         }
       };
 
@@ -150,7 +167,7 @@ const EarnPage = () => {
   }, [userId]);
 
   useEffect(() => {
-    if (isMemberChecked) {
+    if (userId) {
       const fetchCompletedActions = async () => {
         try {
           const response = await fetch(`/api/user/actions?userId=${userId}`);
@@ -159,11 +176,7 @@ const EarnPage = () => {
           if (response.ok) {
             const actionStatus = {};
             options.forEach((option) => {
-              if (option.requiresCheck && !tgMembership) {
-                actionStatus[option.text] = data.completedActions.includes(option.text);
-              } else {
-                actionStatus[option.text] = data.completedActions.includes(option.text);
-              }
+              actionStatus[option.text] = data.completedActions.includes(option.text);
             });
             setCompletedActions(actionStatus);
           } else {
@@ -176,7 +189,14 @@ const EarnPage = () => {
 
       fetchCompletedActions();
     }
-  }, [isMemberChecked, tgMembership, userId, options]);
+  }, [userId, options]);
+
+  useEffect(() => {
+    const storedJoinState = localStorage.getItem('joinClicked');
+    if (storedJoinState) {
+      setJoinClicked(JSON.parse(storedJoinState));
+    }
+  }, []);
 
   const handleInviteClick = async () => {
     if (!userId) return;
@@ -193,62 +213,76 @@ const EarnPage = () => {
       const data = await response.json();
 
       if (data.success) {
-        setInviteLink(data.inviteLink); // Set the invite link
-        window.open(data.inviteLink, '_blank'); // Open the invite link in a new tab
+        setInviteLink(data.inviteLink);
+        window.open(data.inviteLink, '_blank');
       }
     } catch (error) {
       console.error('Error generating invite link:', error);
     }
   };
 
-  const handleJoinClick = async (event, option) => {
+  const handleCheckClick = async (event, option, joinClicked) => {
     event.preventDefault();
-
-    if (option.text === "Invite Your Friend") {
-      handleInviteClick(); // Handle invite logic
-    } else {
+  
+    // Open the link in a new tab
+    if (option.link) {
       window.open(option.link, '_blank');
-
-      if (userId) {
-        try {
-          const response = await fetch('/api/user/actions', {
+    }
+  
+    // If the action is not completed and the user has not clicked "Join"
+    if (!completedActions[option.text] && !joinClicked) {
+      setJoinClicked(true);
+      localStorage.setItem('joinClicked', true);
+    }
+  
+    // Check membership and save action if "Join" was clicked and the action is not yet completed
+    if (!completedActions[option.text] && joinClicked) {
+      try {
+        const response = await fetch(`/api/checkMembership?userId=${userId}`);
+        const data = await response.json();
+  
+        if (data.isMember) {
+          const saveActionResponse = await fetch('/api/user/actions', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({ userId, action: option.text, points: option.points }),
           });
-
-          if (response.ok) {
+  
+          if (saveActionResponse.ok) {
             setCompletedActions((prev) => ({ ...prev, [option.text]: true }));
           } else {
-            const data = await response.json();
-            console.error('Failed to save action:', data.message);
+            const saveData = await saveActionResponse.json();
+            console.error('Failed to save action:', saveData.message);
           }
-        } catch (error) {
-          console.error('Error saving action:', error);
+        } else {
+          console.error('User is not a member of the Telegram channel.');
         }
+      } catch (error) {
+        console.error('Error checking membership or saving action:', error);
       }
     }
   };
+  
 
   const handleCardClick = (option) => {
-    setSelectedOption(option); // Set the selected card
-    setIsModalOpen(true); // Open the modal
+    setSelectedOption(option);
+    setIsModalOpen(true);
   };
 
   const closeModal = () => {
-    setIsModalOpen(false); // Close the modal
-    setSelectedOption(null); // Clear the selected option
+    setIsModalOpen(false);
+    setSelectedOption(null);
   };
 
   if (loading) {
-    return <div>Loading...</div>; // Add a loading state
+    return <div>Loading...</div>;
   }
 
   return (
     <div className={styles.container}>
-      <div className={styles.earnOptions}>
+      <div className={`${styles.earnOptions} ${isModalOpen ? styles.blurredBackground : ''}`}>
         {options.map((option, index) => (
           <div key={index} className={styles.option} onClick={() => handleCardClick(option)}>
             <Image className={styles.image} src={option.icon} alt={option.text} width={60} height={60} />
@@ -266,10 +300,10 @@ const EarnPage = () => {
           option={selectedOption}
           isOpen={isModalOpen}
           onClose={closeModal}
-          handleJoinClick={handleJoinClick}
+          handleCheckClick={handleCheckClick}
           completedActions={completedActions}
-          tgMembership={tgMembership}
           inviteLink={inviteLink}
+          joinClicked={joinClicked}
         />
       )}
     </div>

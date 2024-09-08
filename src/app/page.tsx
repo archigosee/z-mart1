@@ -3,6 +3,7 @@ import axios from 'axios';
 import Link from 'next/link';
 import ListProducts from '../components/products/ListProducts';
 import queryString from 'query-string';
+import Search from '../components/layouts/Search';
 
 // Define the type for searchParams
 interface SearchParams {
@@ -37,8 +38,9 @@ const HomePage = async ({ searchParams }: { searchParams: SearchParams }) => {
 
   return (
     <>
+    <Search />
       {/* Navigation Bar */}
-      <nav className="bg-gray-800 p-4">
+      <nav className="bg-gray-800 p-4 mt-2">
         <ul className="flex space-x-4">
           <li>
             <Link href="/" className="text-white hover:text-gray-300 m-14 ">

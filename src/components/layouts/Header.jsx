@@ -5,7 +5,6 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import Search from './Search';
 import WebApp from '@twa-dev/sdk';
 
 const Header = () => {
@@ -24,14 +23,13 @@ const Header = () => {
           <div className="flex-shrink-0 mr-5">
             <a href="/">
               <Image
-                src="/images/Zobel Technology Blue.png"
-                height="40"
-                width="120"
+                src="/images/Waga.png"
+                height="0"
+                width="60"
                 alt="BuyItNow"
               />
             </a>
           </div>
-          <Search />
 
           <div className="flex items-center space-x-2 ml-auto">
           <Link
@@ -46,10 +44,6 @@ const Header = () => {
       height="40" // Adjust the height as needed
       className="inline-block"
     />
- 
-  <span className="hidden lg:inline ml-1">
-    Cart (<b>0</b>)
-  </span>
 </Link>
             
             {userData ? (
@@ -57,7 +51,7 @@ const Header = () => {
                 <div className="flex items-center mb-4 space-x-3 mt-4 cursor-pointer">
                   <img
                     className="w-10 h-10 rounded-full"
-                    src={userData.photo_url || "/images/default.png"} // Use Telegram profile picture
+                    src={userData.photo_url || "/images/default_avatar.png"} // Use Telegram profile picture
                   />
                   <div className="space-y-1 font-medium">
                     <p>{userData.first_name}</p>
@@ -69,15 +63,6 @@ const Header = () => {
             )}
           </div>
 
-          <div className="lg:hidden ml-2">
-            <button
-              type="button"
-              className="bg-white p-3 inline-flex items-center rounded-md text-black hover:bg-gray-200 hover:text-gray-800 border border-transparent"
-            >
-              <span className="sr-only">Open menu</span>
-              <i className="fa fa-bars fa-lg"></i>
-            </button>
-          </div>
         </div>
       </div>
     </header>

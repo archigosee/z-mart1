@@ -129,6 +129,9 @@ const ProductDetails = ({ product }) => {
               <p className="mb-4 font-semibold text-xl">{product?.price} Birr</p>
 
               <p className="mb-4 text-gray-500">{product?.description}</p>
+              <span className="text-xl text-black">
+                {product?.commission} birr Commission
+              </span>
 
               <div className="flex flex-wrap gap-2 mb-5">
                 {inCart ? (
