@@ -58,5 +58,5 @@ jobs:
         with:
           app-name: 'waga'
           slot-name: 'Production'
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_7D2FF9439893486EAB6F1FA30FC7BCCD }}
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_4BAE481DCF484C87BF6C101FF56F0665 }}
           package: .
